@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+// ⚡ ADDED: Website control admin ke liye status enum logic
+enum PropertyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER") // USER, OWNER, AGENT, ADMIN
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  properties    Property[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Property {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  price       Float
+  location    String
+  category    String          // Flat, Villa, Plot, Commercial
+  beds        Int             @default(0)
+  baths       Int             @default(0)
+  sqft        Int             @default(0)
+  images      String[]        // Base Array for Cloudinary string pools
+  userId      String          @db.ObjectId // Owner/Agent reference
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // ⚡ ADDED: Property approval control status field (By default PENDING)
+  status      PropertyStatus  @default(PENDING)
+
+  // 🚀 FIXED: PropertyImage relation layer linkage coordinate mapping
+  propertyImages PropertyImage[]
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model PropertyImage {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  url        String
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+// =========================================================================
+// NEXTAUTH REQUISITE SCHEMAS (Session tracking nodes)
+// =========================================================================
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
