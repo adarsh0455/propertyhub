@@ -8,7 +8,7 @@ async function getProperties() {
     const properties = await withDbRetry(() =>
       db
         .collection("Property")
-        .find({ status: "APPROVED" })
+        .find({ status: "APPROVED" }) // Strict query pipeline matching admin console state
         .sort({ createdAt: -1 })
         .toArray()
     );
@@ -16,7 +16,10 @@ async function getProperties() {
     if (properties.length === 0) throw new Error("No approved data in DB");
 
     return properties.map((p: any) => ({
-      image: p.images && p.images.length > 0 ? p.images[0] : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
+      // 🔥 Fixed Image Key Fallback mapping for Cloudinary structure logic
+      image: (p.image && p.image.length > 0) 
+        ? p.image[0] 
+        : (p.images && p.images.length > 0) ? p.images[0] : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
       price: typeof p.price === "number"
         ? p.price >= 10000000
           ? `₹${(p.price / 10000000).toFixed(2)} Crore`
@@ -60,36 +63,6 @@ async function getProperties() {
         beds: 0,
         baths: 0,
         area: "2,100 sqft",
-        type: "Verified Plot",
-      },
-      {
-        image: "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=600&q=80",
-        price: "₹4.20 Crore",
-        title: "The Royal Oak Executive Residence",
-        location: "Aliganj Institutional Sector, Lucknow",
-        beds: 5,
-        baths: 6,
-        area: "4,500 sqft",
-        type: "Luxury Villa",
-      },
-      {
-        image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80",
-        price: "₹1.65 Crore",
-        title: "Vrindavan Yojna Smart Premium Flat",
-        location: "Raebareli Road Highway, Lucknow",
-        beds: 3,
-        baths: 4,
-        area: "2,200 sqft",
-        type: "Apartment / Flat",
-      },
-      {
-        image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=600&q=80",
-        price: "₹2.10 Crore",
-        title: "Ansal API High-End Residential Land",
-        location: "Sultanpur Road Corridor, Lucknow",
-        beds: 0,
-        baths: 0,
-        area: "3,000 sqft",
         type: "Verified Plot",
       }
     ];
@@ -153,20 +126,6 @@ export default async function PropertiesPage() {
                   <option value="above-3">Above ₹3 Crore</option>
                 </select>
               </div>
-
-              <div className="flex flex-col space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Specifications (Beds)</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {["Any", "1+", "3+", "5+"].map((bedOpt, idx) => (
-                    <button 
-                      key={idx} 
-                      className={`py-2 text-[11px] font-black border rounded-lg transition-colors ${idx === 0 ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-700 border-slate-200 hover:border-blue-300"}`}
-                    >
-                      {bedOpt}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             <button className="w-full py-3.5 bg-[#090D16] hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-200 shadow-md">
@@ -174,19 +133,12 @@ export default async function PropertiesPage() {
             </button>
           </aside>
 
-          {/* RIGHT PANEL: Symmetrical Property Cards Showcase */}
+          {/* RIGHT PANEL: Property Cards Showcase */}
           <main className="lg:col-span-3 w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 w-full">
               {allProperties.map((property, index) => (
                 <PropertyCard key={index} property={property} />
               ))}
-            </div>
-
-            <div className="w-full border-t border-slate-200/60 pt-10 mt-12 flex items-center justify-center space-x-2">
-              <button className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50">Prev</button>
-              <button className="h-8 w-8 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center justify-center">1</button>
-              <button className="h-8 w-8 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center">2</button>
-              <button className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Next</button>
             </div>
           </main>
         </div>

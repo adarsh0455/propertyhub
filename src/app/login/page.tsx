@@ -41,21 +41,6 @@ export default function LoginPage() {
     if (!password) {
       setPasswordError("Authentication password cannot be empty.");
       hasError = true;
-    } else if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters long.");
-      hasError = true;
-    } else if (!/[A-Z]/.test(password)) {
-      setPasswordError("Password must contain at least one capital letter (A-Z).");
-      hasError = true;
-    } else if (!/[a-z]/.test(password)) {
-      setPasswordError("Password must contain at least one small letter (a-z).");
-      hasError = true;
-    } else if (!/[0-9]/.test(password)) {
-      setPasswordError("Password must include at least one numerical digit (0-9).");
-      hasError = true;
-    } else if (!/[@$!%*#?&]/.test(password)) {
-      setPasswordError("Password must include at least one special character (e.g., @, $, !, %, *, #, ?, &).");
-      hasError = true;
     }
 
     // If any client-side error exists, block execution immediately
@@ -74,15 +59,27 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // Agar credentials API Router (`route.ts`) me mock check se match nhi hue
-        setPasswordError("Invalid credentials identity or cryptographic mismatch.");
+        setPasswordError(result.error || "Invalid credentials identity or cryptographic mismatch.");
         setIsSubmitting(false);
       } else {
-        // Successful dynamic login loop sync
-        alert("Login Successful! Syncing verified session token...");
-        
-        // User ko automatic homepage ya asset route par shift karna
-        router.push("/");
+        // 🔥 Dynamic Redirection Core: Client-side response data verification se data fetch karna
+        // Session ko fresh read karne ke liye immediate hit lagate hain
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+
+        const userRole = session?.user?.role;
+
+        alert(`Login Successful! Logged in as: ${userRole || "USER"}`);
+
+        // 🛡️ Safe Role Matrix Routing System
+        if (userRole === "ADMIN") {
+          router.push("/api/admin/dashboard");
+        } else if (userRole === "SELLER" || userRole === "USER") {
+          router.push("/sellerdashboard");
+        } else {
+          router.push("/");
+        }
+
         router.refresh();
       }
     } catch (err) {

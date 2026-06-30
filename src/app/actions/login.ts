@@ -1,8 +1,6 @@
 "use server";
 
-import { client, withDbRetry } from "@/lib/db";
-import bcrypt from "bcryptjs";
-
+// 🔥 NextAuth ke functional system ko bypass karne ke liye import nahi kiya ja sakta, direct authorization triggers chahiye hote hain
 export async function loginUser(formData: FormData) {
   try {
     const email = formData.get("email") as string;
@@ -12,31 +10,14 @@ export async function loginUser(formData: FormData) {
       return { success: false, error: "Email and password fields are strictly required." };
     }
 
-    const db = client.db();
-    const user = await withDbRetry(() =>
-      db.collection("User").findOne({
-        email: email.toLowerCase().trim(),
-      })
-    );
-
-    if (!user || !user.password) {
-      return { success: false, error: "No user found with this email registered." };
-    }
-
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordCorrect) {
-      return { success: false, error: "Invalid account password credentials." };
-    }
-
+    // NextAuth Client-side form handler ya server layer handlers par trigger logic pass hoti hai.
+    // Hum direct string return karenge taaki aapke UI component ke andar is data se NextAuth ka 'signIn' method hit ho sake.
     return { 
       success: true, 
-      message: "Authentication successful! Credentials verified.",
-      user: {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role
+      message: "Form verified locally. Forwarding payload execution parameters to NextAuth pipeline...",
+      payload: {
+        email: email.toLowerCase().trim(),
+        password: password
       }
     };
 

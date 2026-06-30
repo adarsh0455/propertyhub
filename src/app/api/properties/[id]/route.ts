@@ -4,13 +4,14 @@ import { ObjectId } from "mongodb";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const db = client.db();
     const property = await withDbRetry(() =>
       db.collection("Property").findOne({
-        _id: new ObjectId(params.id),
+        _id: new ObjectId(id),
       })
     );
 

@@ -65,7 +65,7 @@ export default function PostPropertiesPage() {
       for (const file of selectedFiles) {
         const formDataCloud = new FormData();
         formDataCloud.append("file", file);
-        formDataCloud.append("upload_preset", "property_preset"); // Mapped directly to your preset name
+        formDataCloud.append("upload_preset", "property_preset");
 
         const cloudRes = await fetch(
           `https://api.cloudinary.com/v1_1/du4fsn3m2/image/upload`,
@@ -74,10 +74,23 @@ export default function PostPropertiesPage() {
 
         if (cloudRes.ok) {
           const cloudData = await cloudRes.json();
-          uploadedImageUrls.push(cloudData.secure_url); // Storing the return safe image pointer url string
+          if (cloudData.secure_url) {
+            uploadedImageUrls.push(cloudData.secure_url);
+          } else {
+            console.error("Cloudinary upload succeeded but no secure_url returned:", cloudData);
+            alert(`Image upload failed for ${file.name}: no URL returned from server.`);
+          }
         } else {
-          console.error("Cloudinary connection breakdown node for a singular file stream.");
+          const errText = await cloudRes.text();
+          console.error("Cloudinary connection breakdown node for a singular file stream:", cloudRes.status, errText);
+          alert(`Image upload failed for ${file.name}: ${cloudRes.status} - ${errText}`);
         }
+      }
+
+      if (selectedFiles.length > 0 && uploadedImageUrls.length === 0) {
+        alert("All image uploads failed. Please check your Cloudinary configuration and try again.");
+        setLoading(false);
+        return;
       }
 
       // 2. Dispatch Stream to Next.js API core controller
@@ -104,7 +117,7 @@ export default function PostPropertiesPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert("🎉 Property submitted successfully with real cloud imagery! Pending admin validation.");
+        alert(`🎉 Property submitted successfully${uploadedImageUrls.length > 0 ? ` with ${uploadedImageUrls.length} image(s)` : ""}! Pending admin validation.`);
         
         // Reset local input nodes state dashboard
         setFormData({
