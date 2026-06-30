@@ -1,15 +1,13 @@
 "use server";
 
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 
 export async function fetchAllProperties() {
   try {
     const db = client.db();
-    const properties = await db
-      .collection("Property")
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+    const properties = await withDbRetry(() =>
+      db.collection("Property").find({}).sort({ createdAt: -1 }).toArray()
+    );
 
     return { success: true, data: properties };
   } catch (error: any) {

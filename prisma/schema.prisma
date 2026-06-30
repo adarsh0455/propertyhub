@@ -8,7 +8,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
 }
 
 // ⚡ ADDED: Website control admin ke liye status enum logic
@@ -43,7 +42,8 @@ model Property {
   category    String          // Flat, Villa, Plot, Commercial
   beds        Int             @default(0)
   baths       Int             @default(0)
-  sqft        Int             @default(0)
+  sqft        Int             @default(0)   // ⚡ Form ka area number banakar isme map hoga
+  amenities   String[]        // 🚀 NEW ADDED: Array format for checkbox values storage
   images      String[]        // Base Array for Cloudinary string pools
   userId      String          @db.ObjectId // Owner/Agent reference
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)

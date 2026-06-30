@@ -1,6 +1,6 @@
 "use server";
 
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export async function registerUser(formData: FormData) {
@@ -15,9 +15,11 @@ export async function registerUser(formData: FormData) {
     }
 
     const db = client.db();
-    const existingUser = await db.collection("User").findOne({
-      email: email.toLowerCase().trim(),
-    });
+    const existingUser = await withDbRetry(() =>
+      db.collection("User").findOne({
+        email: email.toLowerCase().trim(),
+      })
+    );
 
     if (existingUser) {
       return { success: false, error: "This email entity is already registered inside cloud nodes." };
@@ -25,14 +27,16 @@ export async function registerUser(formData: FormData) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await db.collection("User").insertOne({
-      name,
-      email: email.toLowerCase().trim(),
-      password: hashedPassword,
-      role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await withDbRetry(() =>
+      db.collection("User").insertOne({
+        name,
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        role,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    );
 
     return { success: true, message: "User registered successfully onto cluster cloud database network!" };
 

@@ -1,20 +1,26 @@
 import PropertyCard from "./propertycard";
 import Link from "next/link";
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 
 async function getFeaturedProperties() {
   try {
-    const properties = await client
-      .db("propertyhub")
-      .collection("Property")
-      .find({ status: "APPROVED" })
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .toArray();
+    const db = client.db("propertyhub");
+    const properties = await withDbRetry(() =>
+      db
+        .collection("Property")
+        .find({ status: "APPROVED" })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray()
+    );
 
     return properties.map((p: any) => ({
       image: p.images?.[0] || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
-      price: typeof p.price === "number" ? `₹${(p.price / 10000000).toFixed(2)} Crore` : p.price,
+      price: typeof p.price === "number"
+        ? p.price >= 10000000
+          ? `₹${(p.price / 10000000).toFixed(2)} Crore`
+          : `₹${(p.price / 100000).toFixed(0)} Lakh`
+        : p.price,
       title: p.title,
       location: p.location,
       beds: p.beds || 0,

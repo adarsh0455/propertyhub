@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { client } from "@/lib/db";
-import { ObjectId } from "mongodb";
 
+// 🔄 Database layer connection mapping logic for specific user
 async function getUserProperties(userId: string) {
   try {
     const properties = await client
@@ -15,8 +15,8 @@ async function getUserProperties(userId: string) {
       id: p._id.toString(),
       title: p.title,
       category: p.category,
-      price: p.price,
-      status: p.status,
+      price: Number(p.price) || 0, // Ensure numeric parsing evaluation
+      status: p.status || "PENDING", // Fallback standard status string
     }));
   } catch (error) {
     console.error("Error fetching user properties:", error);
@@ -25,11 +25,19 @@ async function getUserProperties(userId: string) {
 }
 
 export default async function SellerDashboardPage() {
-  const properties = await getUserProperties("demo-user-id");
+  // 🚀 Synced perfectly with the temporary user node key used in post-property form
+  const properties = await getUserProperties("65f1bc2d8d8f4c23a1a4b5cd");
+
+  // Dynamic Valuation Formatter Utility Node
+  const totalValuation = properties.reduce((acc: number, p: any) => acc + (p.price || 0), 0);
+  const formattedValuation = totalValuation >= 10000000 
+    ? `₹${(totalValuation / 10000000).toFixed(2)} Cr` 
+    : `₹${(totalValuation / 100000).toFixed(2)} Lakh`;
+
   const operationalMetrics = [
-    { value: properties.length.toString(), text: "Total Asset Views", color: "text-blue-600", bg: "bg-blue-50" },
-    { value: "48", text: "Active Buyer Leads", color: "text-emerald-600", bg: "bg-emerald-50" },
-    { value: `₹${(properties.reduce((acc: number, p: any) => acc + (p.price || 0), 0) / 10000000).toFixed(2)} Cr`, text: "Listed Pipeline Valuation", color: "text-indigo-600", bg: "bg-indigo-50" },
+    { value: properties.length.toString(), text: "Total Listed Assets", color: "text-blue-600", bg: "bg-blue-50" },
+    { value: "12", text: "Active Buyer Leads", color: "text-emerald-600", bg: "bg-emerald-50" },
+    { value: formattedValuation, text: "Listed Pipeline Valuation", color: "text-indigo-600", bg: "bg-indigo-50" },
     { value: properties.filter((p: any) => p.status === "PENDING").length.toString(), text: "Pending Approvals", color: "text-amber-600", bg: "bg-amber-50" }
   ];
 
@@ -98,13 +106,17 @@ export default async function SellerDashboardPage() {
                     properties.map((property, index) => (
                       <tr key={property.id || index} className="border-b border-slate-100 hover:bg-slate-50/50">
                         <td className="p-4 font-bold text-slate-800">{property.title}</td>
-                        <td className="p-4">{property.category}</td>
-                        <td className="p-4">₹{property.price ? (property.price / 10000000).toFixed(2) : 'N/A'} Cr</td>
+                        <td className="p-4 uppercase tracking-wider text-[10px] font-black text-slate-400">{property.category}</td>
+                        <td className="p-4 font-bold text-slate-700">
+                          ₹{property.price >= 10000000 
+                            ? `${(property.price / 10000000).toFixed(2)} Cr` 
+                            : `${(property.price / 100000).toFixed(2)} Lakh`}
+                        </td>
                         <td className="p-4">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] ${
-                            property.status === "APPROVED" ? "bg-emerald-50 text-emerald-600" :
-                            property.status === "REJECTED" ? "bg-red-50 text-red-600" :
-                            "bg-amber-50 text-amber-600"
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                            property.status === "APPROVED" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                            property.status === "REJECTED" ? "bg-red-50 text-red-600 border border-red-100" :
+                            "bg-amber-50 text-amber-600 border border-amber-100 animate-pulse"
                           }`}>
                             {property.status}
                           </span>
@@ -113,7 +125,7 @@ export default async function SellerDashboardPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="p-4 text-center text-slate-400">No properties found. Add properties to view them here.</td>
+                      <td colSpan={4} className="p-4 text-center text-slate-400 font-semibold">No properties found. Add properties to view them here.</td>
                     </tr>
                   )}
                 </tbody>
@@ -126,12 +138,12 @@ export default async function SellerDashboardPage() {
             <h3 className="text-xs uppercase tracking-widest font-black text-slate-800 border-b border-slate-100 pb-2">Recent Notifications Stream</h3>
             <div className="space-y-4">
               <div className="text-xs border-l-2 border-blue-500 pl-3 py-0.5 space-y-0.5">
-                <p className="font-bold text-slate-700">New premium client offer generated</p>
-                <p className="text-[10px] text-slate-400">Target Villa • 12 mins ago</p>
+                <p className="font-bold text-slate-700">System Pipeline Online</p>
+                <p className="text-[10px] text-slate-400">Database node synchronized successfully</p>
               </div>
               <div className="text-xs border-l-2 border-slate-200 pl-3 py-0.5 space-y-0.5">
-                <p className="font-semibold text-slate-500">Asset Verification passed audit check</p>
-                <p className="text-[10px] text-slate-400">Plot 210 • 2 hrs ago</p>
+                <p className="font-semibold text-slate-500">Asset Verification Engine</p>
+                <p className="text-[10px] text-slate-400">Monitoring admin verification channels</p>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useState, useRef } from "react";
 export default function PostPropertiesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false); // 🚀 NEW: Loading control state matrix
   
   const [formData, setFormData] = useState({
     title: "",
@@ -52,10 +53,81 @@ export default function PostPropertiesPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 🚀 FIXED: Cloudinary Image Upload & Next.js API Node Connection Pipeline
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitted Property Data Nodes:", formData, "Attached Images:", selectedFiles);
-    alert("Property submitted successfully! Pending admin approval clearance.");
+    setLoading(true);
+
+    try {
+      const uploadedImageUrls: string[] = [];
+
+      // 1. Cloudinary Multi-Image Upload Iteration Loop
+      for (const file of selectedFiles) {
+        const formDataCloud = new FormData();
+        formDataCloud.append("file", file);
+        formDataCloud.append("upload_preset", "property_preset"); // Mapped directly to your preset name
+
+        const cloudRes = await fetch(
+          `https://api.cloudinary.com/v1_1/du4fsn3m2/image/upload`,
+          { method: "POST", body: formDataCloud }
+        );
+
+        if (cloudRes.ok) {
+          const cloudData = await cloudRes.json();
+          uploadedImageUrls.push(cloudData.secure_url); // Storing the return safe image pointer url string
+        } else {
+          console.error("Cloudinary connection breakdown node for a singular file stream.");
+        }
+      }
+
+      // 2. Dispatch Stream to Next.js API core controller
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          category: formData.category,
+          price: formData.price,
+          location: formData.location,
+          area: formData.area, // Backend logic parses this dynamically to integer sqft
+          beds: formData.beds,
+          baths: formData.baths,
+          description: formData.description,
+          amenities: formData.amenities,
+          images: uploadedImageUrls, // Real Cloudinary links injection
+          userId: "65f1bc2d8d8f4c23a1a4b5cd", // Hardcoded temporary account mapping node
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("🎉 Property submitted successfully with real cloud imagery! Pending admin validation.");
+        
+        // Reset local input nodes state dashboard
+        setFormData({
+          title: "",
+          category: "plot",
+          price: "",
+          location: "",
+          area: "",
+          beds: 0,
+          baths: 0,
+          description: "",
+          amenities: [],
+        });
+        setSelectedFiles([]);
+      } else {
+        alert(`Core Operational Error: ${result.error || "Unknown Failure node context"}`);
+      }
+    } catch (error) {
+      console.error("Critical submission pipeline crash stack:", error);
+      alert("Network exception or core server upload channel breakdown detected.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,8 +160,9 @@ export default function PostPropertiesPage() {
               <input 
                 type="text" 
                 required
+                disabled={loading}
                 placeholder="e.g., The Grande Orchard Luxury Mansion"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-60"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
               />
@@ -99,7 +172,8 @@ export default function PostPropertiesPage() {
               <div className="flex flex-col space-y-1.5">
                 <label className="text-[11px] uppercase tracking-wider font-black text-slate-500">Property Category</label>
                 <select 
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-60"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
                 >
@@ -116,8 +190,9 @@ export default function PostPropertiesPage() {
                 <input 
                   type="number" 
                   required
+                  disabled={loading}
                   placeholder="e.g., 24000000"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-60"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
                 />
@@ -130,8 +205,9 @@ export default function PostPropertiesPage() {
                 <input 
                   type="text" 
                   required
+                  disabled={loading}
                   placeholder="e.g., Hazratganj, Lucknow"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-60"
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                 />
@@ -142,23 +218,25 @@ export default function PostPropertiesPage() {
                 <input 
                   type="number" 
                   required
+                  disabled={loading}
                   placeholder="e.g., 3500"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-60"
                   value={formData.area}
                   onChange={(e) => setFormData({...formData, area: e.target.value})}
                 />
               </div>
             </div>
 
-            {/* 🚀 NEW: BEDROOMS, BATHROOMS CONFIGURATION LAYER */}
+            {/* BEDROOMS, BATHROOMS CONFIGURATION LAYER */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-slate-100 pt-6">
               <div className="flex flex-col space-y-1.5">
                 <label className="text-[11px] uppercase tracking-wider font-black text-slate-500">Total Bedrooms (Beds)</label>
                 <input 
                   type="number" 
+                  disabled={loading}
                   placeholder="e.g., 3"
                   min="0"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-60"
                   value={formData.beds || ""}
                   onChange={(e) => setFormData({...formData, beds: parseInt(e.target.value) || 0})}
                 />
@@ -168,23 +246,25 @@ export default function PostPropertiesPage() {
                 <label className="text-[11px] uppercase tracking-wider font-black text-slate-500">Total Bathrooms (Baths)</label>
                 <input 
                   type="number" 
+                  disabled={loading}
                   placeholder="e.g., 2"
                   min="0"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-60"
                   value={formData.baths || ""}
                   onChange={(e) => setFormData({...formData, baths: parseInt(e.target.value) || 0})}
                 />
               </div>
             </div>
 
-            {/* 🚀 NEW: DESCRIPTION RICH TEXTAREA ENGINE */}
+            {/* DESCRIPTION RICH TEXTAREA ENGINE */}
             <div className="flex flex-col space-y-1.5 border-t border-slate-100 pt-6">
               <label className="text-[11px] uppercase tracking-wider font-black text-slate-500">Comprehensive Asset Description</label>
               <textarea 
                 rows={4}
                 required
+                disabled={loading}
                 placeholder="Elaborate premium architectural metrics, modular custom kitchen setup alignments, transit ecosystem connectivity benchmarks..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all resize-none"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all resize-none disabled:opacity-60"
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
               />
@@ -200,6 +280,7 @@ export default function PostPropertiesPage() {
               ref={fileInputRef}
               onChange={handleFileChange}
               multiple
+              disabled={loading}
               accept="image/png, image/jpeg"
               className="hidden" 
             />
@@ -208,7 +289,8 @@ export default function PostPropertiesPage() {
               <button
                 type="button"
                 onClick={onSymbolClick}
-                className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-2xl shadow-sm hover:border-blue-500 hover:text-blue-600 hover:shadow-md transition-all active:scale-95 group cursor-pointer"
+                disabled={loading}
+                className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-2xl shadow-sm hover:border-blue-500 hover:text-blue-600 hover:shadow-md transition-all active:scale-95 group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Click to browse files"
               >
                 📁
@@ -244,11 +326,12 @@ export default function PostPropertiesPage() {
                     formData.amenities.includes(amenity)
                       ? "bg-blue-50/60 border-blue-200 text-blue-700"
                       : "bg-slate-50/40 border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                  } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <input 
                     type="checkbox"
-                    className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    disabled={loading}
+                    className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
                     checked={formData.amenities.includes(amenity)}
                     onChange={() => handleCheckboxChange(amenity)}
                   />
@@ -262,9 +345,10 @@ export default function PostPropertiesPage() {
           <div className="border-t border-slate-100 pt-6 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-md transition-all active:scale-[0.98]"
+              disabled={loading}
+              className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-md transition-all active:scale-[0.98] disabled:cursor-not-allowed"
             >
-              Publish Asset Node
+              {loading ? "Uploading & Publishing..." : "Publish Asset Node"}
             </button>
           </div>
 

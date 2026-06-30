@@ -1,6 +1,6 @@
 "use server";
 
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export async function loginUser(formData: FormData) {
@@ -13,9 +13,11 @@ export async function loginUser(formData: FormData) {
     }
 
     const db = client.db();
-    const user = await db.collection("User").findOne({
-      email: email.toLowerCase().trim(),
-    });
+    const user = await withDbRetry(() =>
+      db.collection("User").findOne({
+        email: email.toLowerCase().trim(),
+      })
+    );
 
     if (!user || !user.password) {
       return { success: false, error: "No user found with this email registered." };

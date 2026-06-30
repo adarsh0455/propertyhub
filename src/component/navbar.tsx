@@ -36,11 +36,9 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-[9999] border-b transition-all duration-500 ease-in-out ${
-        !isMounted 
-          ? "bg-[#090D16] py-6 border-transparent"
-          : isScrolled
-          ? "bg-[#090D16]/95 backdrop-blur-md py-4 border-white/5 shadow-lg"
-          : "bg-[#090D16] py-6 border-transparent md:bg-[#090D16]/40"
+        isScrolled
+          ? "bg-[#090D16] py-4 border-white/5 shadow-lg"
+          : "bg-[#090D16] py-5 border-transparent md:bg-[#090D16]"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between relative z-[9999]">

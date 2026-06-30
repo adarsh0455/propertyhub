@@ -1,6 +1,6 @@
 "use server";
 
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function createProperty(formData: FormData, activeUserId: string) {
@@ -24,21 +24,23 @@ export async function createProperty(formData: FormData, activeUserId: string) {
     const sqft = parseInt(sqftStr) || 0;
 
     const db = client.db();
-    const result = await db.collection("Property").insertOne({
-      title,
-      description,
-      price,
-      location,
-      category,
-      beds,
-      baths,
-      sqft,
-      userId: activeUserId,
-      images: [],
-      status: "PENDING",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const result = await withDbRetry(() =>
+      db.collection("Property").insertOne({
+        title,
+        description,
+        price,
+        location,
+        category,
+        beds,
+        baths,
+        sqft,
+        userId: activeUserId,
+        images: [],
+        status: "PENDING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    );
 
     revalidatePath("/");
     return { 

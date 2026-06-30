@@ -1,29 +1,36 @@
 import PropertyCard from "@/component/propertycard";
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 
 async function getProperties() {
   try {
-    const properties = await client.db("propertyhub")
-      .collection("Property")
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
-      
-    if (properties.length === 0) throw new Error("No data in DB");
-    
+    const db = client.db("propertyhub");
+
+    const properties = await withDbRetry(() =>
+      db
+        .collection("Property")
+        .find({ status: "APPROVED" })
+        .sort({ createdAt: -1 })
+        .toArray()
+    );
+
+    if (properties.length === 0) throw new Error("No approved data in DB");
+
     return properties.map((p: any) => ({
-      image: p.image || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
-      price: typeof p.price === "number" ? `₹${(p.price / 10000000).toFixed(2)} Crore` : p.price,
+      image: p.images && p.images.length > 0 ? p.images[0] : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
+      price: typeof p.price === "number"
+        ? p.price >= 10000000
+          ? `₹${(p.price / 10000000).toFixed(2)} Crore`
+          : `₹${(p.price / 100000).toFixed(0)} Lakh`
+        : p.price,
       title: p.title,
       location: p.location,
       beds: p.beds || 0,
       baths: p.baths || 0,
-      area: p.area || "N/A",
-      type: p.type || "Property",
+      area: p.sqft ? `${p.sqft.toLocaleString("en-IN")} sqft` : "N/A",
+      type: p.category || "Property",
     }));
   } catch (error) {
-    console.log("Database fetch lazy/empty. Loading premium fallback catalog matrix.");
-    
+    console.log("Database fetch empty/pending. Loading premium fallback catalog matrix.");
     return [
       {
         image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",

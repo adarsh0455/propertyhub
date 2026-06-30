@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { client } from "@/lib/db";
+import { client, withDbRetry } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
@@ -16,9 +16,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credential inputs.");
         }
 
-        const user = await client.db("propertyhub").collection("User").findOne({
-          email: credentials.email.toLowerCase().trim()
-        });
+        const user = await withDbRetry(() =>
+          client.db("propertyhub").collection("User").findOne({
+            email: credentials.email.toLowerCase().trim()
+          })
+        );
 
         if (!user || !user.password) {
           throw new Error("No user found with this email registered.");
