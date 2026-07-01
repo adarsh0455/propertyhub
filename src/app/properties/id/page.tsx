@@ -1,18 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, use } from "react";
 import Navbar from "@/component/navbar";
 
-export default function PropertyDetailsPage() {
-  const params = useParams();
-  const propertyId = params.id as string;
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function PropertyDetailsPage({ params }: PageProps) {
+  // Next.js guidelines ke mutabik params promise ko unwrap kiya
+  const resolvedParams = use(params);
+  const propertyId = resolvedParams.id;
 
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
+    if (!propertyId) return;
     async function loadProperty() {
       try {
         const res = await fetch(`/api/properties/${propertyId}`);
@@ -43,8 +48,8 @@ export default function PropertyDetailsPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-slate-400 font-bold text-sm">Loading property details...</p>
+        <div className="min-h-screen flex items-center justify-center bg-[#F4F7FA]">
+          <p className="text-slate-400 font-bold text-sm animate-pulse">Loading property details...</p>
         </div>
       </>
     );
@@ -54,7 +59,7 @@ export default function PropertyDetailsPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-[#F4F7FA]">
           <p className="text-slate-400 font-bold text-sm">Property not found.</p>
         </div>
       </>
@@ -64,6 +69,12 @@ export default function PropertyDetailsPage() {
   const showcaseImages = property.images && property.images.length > 0
     ? property.images
     : ["https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80"];
+
+  // 💰 Lakh / Cr Valuation Formatter Utility
+  const numericPrice = Number(property.price) || 0;
+  const formattedPrice = numericPrice >= 10000000 
+    ? `造型${(numericPrice / 10000000).toFixed(2)} Cr` 
+    : `造型${(numericPrice / 100000).toFixed(2)} Lakh`;
 
   return (
     <>
@@ -102,14 +113,23 @@ export default function PropertyDetailsPage() {
               {/* Specification Meta Box */}
               <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded tracking-wider uppercase">Verified Listing</span>
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1.5">{property.title}</h1>
+                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full tracking-wider uppercase">
+                    {property.category || "Property"}
+                  </span>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-2">{property.title}</h1>
                   <p className="text-xs font-bold text-slate-400 mt-1">📍 {property.location}</p>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 block tracking-wider uppercase">Valuation Price</span>
-                  <p className="text-3xl font-black text-blue-600 tracking-tight">₹{typeof property.price === "number" ? property.price.toLocaleString("en-IN") : property.price}</p>
+                  <p className="text-3xl font-black text-blue-600 tracking-tight">{formattedPrice}</p>
                 </div>
+              </div>
+
+              {/* Blueprint Details Grid Layer */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs grid grid-cols-3 gap-4 text-center font-bold text-xs text-slate-500 uppercase tracking-wide">
+                <div className="py-2 bg-slate-50 rounded-xl">🛏️ {property.beds || 0} Beds</div>
+                <div className="py-2 bg-slate-50 rounded-xl">🛁 {property.baths || 0} Baths</div>
+                <div className="py-2 bg-slate-50 rounded-xl">📐 {property.sqft || property.area || 0} Sq-Ft</div>
               </div>
 
               {/* Description Node */}
@@ -126,7 +146,7 @@ export default function PropertyDetailsPage() {
             <div className="lg:col-span-4">
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs sticky top-28 text-center">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-xl mx-auto shadow-inner">👤</div>
-                <h4 className="text-base font-black text-slate-900 mt-3">Property Owner</h4>
+                <h4 className="text-base font-black text-slate-900 mt-3">Property Executive</h4>
                 <p className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">Verified Listing</p>
                 
                 <div className="mt-6 space-y-2">

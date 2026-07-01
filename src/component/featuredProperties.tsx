@@ -15,6 +15,7 @@ async function getFeaturedProperties() {
     );
 
     return properties.map((p: any) => ({
+      id: p._id?.toString() || "",
       image: p.images?.[0] || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
       price: typeof p.price === "number"
         ? p.price >= 10000000

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { client } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation"; // 🚀 NEW: Server redirect helper
 
 // 🔄 Database layer connection mapping logic for specific user
 async function getUserProperties(userId: string) {
@@ -25,8 +28,16 @@ async function getUserProperties(userId: string) {
 }
 
 export default async function SellerDashboardPage() {
-  // 🚀 Synced perfectly with the temporary user node key used in post-property form
-  const properties = await getUserProperties("65f1bc2d8d8f4c23a1a4b5cd");
+  const session = await getServerSession(authOptions);
+
+  // 🛡️ SECURITY SHIELD: Agar valid login session nahi hai, access deny aur direct redirect login page par!
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  // 🔥 100% Dynamic ID Mapping without any hardcoded fallback node
+  const userId = session.user.id;
+  const properties = await getUserProperties(userId);
 
   // Dynamic Valuation Formatter Utility Node
   const totalValuation = properties.reduce((acc: number, p: any) => acc + (p.price || 0), 0);
@@ -57,7 +68,9 @@ export default async function SellerDashboardPage() {
               Control Center
             </span>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Seller Dashboard</h1>
-            <p className="text-xs sm:text-sm text-slate-400 font-semibold">Welcome back, Agent Panel node. Tracking live real-time escrow analytics.</p>
+            <p className="text-xs sm:text-sm text-slate-400 font-semibold">
+              Welcome back, <span className="text-blue-600 font-bold">{session.user.name || "Agent"}</span>. Tracking live real-time escrow analytics.
+            </p>
           </div>
           
           {/* Action Link to easily navigate to Property Posting Wizard Form */}
