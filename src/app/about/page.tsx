@@ -28,7 +28,7 @@ export default function AboutPage() {
               Redefining Luxury Real Estate Discovery
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 font-semibold leading-relaxed">
-              Launched with a mission to eliminate institutional fragmentation, PropertyHub operates as India's premier decentralized marketplace framework. We serve high-velocity buyers, corporate agents, and developers with absolute data transparency.
+              Launched with a mission to eliminate institutional fragmentation, PropertyHub operates as India&#39;s premier decentralized marketplace framework. We serve high-velocity buyers, corporate agents, and developers with absolute data transparency.
             </p>
             <div className="pt-2">
               <Link href="/properties" className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/10 transition-colors inline-block">

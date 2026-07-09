@@ -13,7 +13,7 @@ export default function Footer() {
             <span>PropertyHub</span>
           </h3>
           <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-xs">
-            India's most innovative high-end digital real estate platform. We make discovering, leasing, and trading residential spaces absolutely seamless.
+            India&#39;s most innovative high-end digital real estate platform. We make discovering, leasing, and trading residential spaces absolutely seamless.
           </p>
         </div>
 

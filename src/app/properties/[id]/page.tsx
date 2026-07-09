@@ -3,6 +3,20 @@
 import { useState, useEffect, use } from "react";
 import Navbar from "@/component/navbar";
 
+interface Property {
+  _id?: string;
+  title?: string;
+  description?: string;
+  price?: number;
+  location?: string;
+  category?: string;
+  beds?: number;
+  baths?: number;
+  sqft?: number;
+  area?: number;
+  images?: string[];
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -12,7 +26,7 @@ export default function PropertyDetailsPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const propertyId = resolvedParams.id;
 
-  const [property, setProperty] = useState<any>(null);
+  const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -73,8 +87,8 @@ export default function PropertyDetailsPage({ params }: PageProps) {
   // 💰 Lakh / Cr Valuation Formatter Utility
   const numericPrice = Number(property.price) || 0;
   const formattedPrice = numericPrice >= 10000000 
-    ? `造型${(numericPrice / 10000000).toFixed(2)} Cr` 
-    : `造型${(numericPrice / 100000).toFixed(2)} Lakh`;
+    ? `₹${(numericPrice / 10000000).toFixed(2)} Cr` 
+    : `₹${(numericPrice / 100000).toFixed(2)} Lakh`;
 
   return (
     <>

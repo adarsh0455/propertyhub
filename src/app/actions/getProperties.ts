@@ -10,7 +10,7 @@ export async function fetchAllProperties() {
     );
 
     return { success: true, data: properties };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PROPERTY_FETCH_PIPELINE_ERROR:", error);
     return { success: false, error: "Failed to extract properties from database." };
   }

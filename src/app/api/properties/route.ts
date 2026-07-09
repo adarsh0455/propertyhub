@@ -1,25 +1,46 @@
 import { NextResponse } from "next/server";
 import { client, withDbRetry } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+interface SessionUser {
+  role?: string;
+}
+
+interface Session {
+  user?: SessionUser;
+}
 
 // 🔍 GET: Fetch all approved or admin properties
 export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const isAdmin = searchParams.get("admin") === "true";
+
+  // 🔒 Admin check for admin=true
+  if (isAdmin) {
+    const session = await getServerSession(authOptions) as Session | null;
+    if (!session || session.user?.role !== "ADMIN") {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const isAdmin = searchParams.get("admin") === "true";
+    const isAdminView = searchParams.get("admin") === "true";
 
     const db = client.db();
     const properties = await withDbRetry(() =>
       db
         .collection("Property")
-        .find(isAdmin ? {} : { status: "APPROVED" })
+        .find(isAdminView ? {} : { status: "APPROVED" })
         .sort({ createdAt: -1 })
         .toArray()
     );
 
     return NextResponse.json({ success: true, data: properties });
-  } catch (error) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: "Data fetch karne mein dikkat aayi hai." },
+      { success: false, error: error instanceof Error ? error.message : "Failed to fetch properties" },
       { status: 500 }
     );
   }

@@ -1,8 +1,9 @@
+import Link from "next/link";
 import PropertyCard from "@/component/propertycard";
 import { client, withDbRetry } from "@/lib/db";
 
 interface PropertyDoc {
-  _id?: any;
+  _id?: { toString(): string };
   propertyId?: string;
   images?: string[];
   price?: number | string;
@@ -188,9 +189,9 @@ export default async function PropertiesPage({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-800">Advanced Filters</h3>
               {hasActiveFilters && (
-                <a href="/properties" className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-600 cursor-pointer">
+                <Link href="/properties" className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-600 cursor-pointer">
                   Reset
-                </a>
+                </Link>
               )}
             </div>
 

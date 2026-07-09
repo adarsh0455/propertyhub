@@ -40,7 +40,7 @@ export async function registerUser(formData: FormData) {
 
     return { success: true, message: "User registered successfully onto cluster cloud database network!" };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("DATABASE_REGISTRATION_PIPELINE_ERROR:", error);
     return { success: false, error: "Internal Server Error in database connectivity matrix loops." };
   }

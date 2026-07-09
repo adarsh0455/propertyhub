@@ -100,7 +100,7 @@ export default function RegisterPage() {
       } else {
         setSubmitStatus({ success: false, message: result.error || "Database registration failed." });
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus({ success: false, message: "An unexpected runtime matrix network loop error occurred." });
     } finally {
       setIsSubmitting(false);

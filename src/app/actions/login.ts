@@ -21,8 +21,8 @@ export async function loginUser(formData: FormData) {
       }
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("LOGIN_PIPELINE_ERROR:", error);
-    return { success: false, error: error.message || "Internal Server Authentication Error" };
+    return { success: false, error: error instanceof Error ? error.message : "Internal Server Authentication Error" };
   }
 }

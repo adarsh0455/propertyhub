@@ -18,9 +18,9 @@ export async function PATCH(
     );
 
     return NextResponse.json({ success: true, data: updatedProperty });
-  } catch (error) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: "Status update fail ho gaya" },
+      { success: false, error: error instanceof Error ? error.message : "Status update failed" },
       { status: 500 }
     );
   }

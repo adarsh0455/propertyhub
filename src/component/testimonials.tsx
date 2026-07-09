@@ -61,7 +61,7 @@ export default function Testimonials() {
         
         <div key={currentIndex} className="w-full space-y-6">
           <p className="text-slate-600 font-medium italic text-xs sm:text-sm md:text-base max-w-2xl leading-relaxed mx-auto px-4 min-h-[90px] flex items-center justify-center">
-            "{reviews[currentIndex].text}"
+            &ldquo;{reviews[currentIndex].text}&rdquo;
           </p>
           
           <div className="space-y-1">

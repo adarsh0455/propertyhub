@@ -31,6 +31,7 @@ model User {
   properties    Property[]
   accounts      Account[]
   sessions      Session[]
+  likes         Like[]
 }
 
 model Property {
@@ -53,6 +54,7 @@ model Property {
 
   // 🚀 FIXED: PropertyImage relation layer linkage coordinate mapping
   propertyImages PropertyImage[]
+  likes         Like[]
 
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -63,6 +65,18 @@ model PropertyImage {
   url        String
   propertyId String   @db.ObjectId
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  propertyId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
 }
 
 // =========================================================================

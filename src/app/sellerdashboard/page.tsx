@@ -4,6 +4,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation"; // 🚀 NEW: Server redirect helper
 
+interface Property {
+  _id: { toString(): string };
+  title: string;
+  category: string;
+  price: number | string;
+  status: string;
+}
+
 // 🔄 Database layer connection mapping logic for specific user
 async function getUserProperties(userId: string) {
   try {
@@ -14,7 +22,8 @@ async function getUserProperties(userId: string) {
       .sort({ createdAt: -1 })
       .toArray();
 
-    return properties.map((p: any) => ({
+    const propertyDocs = properties as unknown as Property[];
+    return propertyDocs.map((p: Property) => ({
       id: p._id.toString(),
       title: p.title,
       category: p.category,
@@ -27,20 +36,36 @@ async function getUserProperties(userId: string) {
   }
 }
 
-export default async function SellerDashboardPage() {
-  const session = await getServerSession(authOptions);
+interface UserWithRole {
+  id: string;
+  role?: string;
+  name?: string | null;
+}
 
-  // 🛡️ SECURITY SHIELD: Agar valid login session nahi hai, access deny aur direct redirect login page par!
-  if (!session?.user) {
-    redirect("/login");
-  }
+interface SessionWithUser {
+  user?: UserWithRole;
+}
+
+export default async function SellerDashboardPage() {
+  const session = await getServerSession(authOptions) as SessionWithUser;
+
+// 🛡️ SECURITY SHIELD: Agar valid login session nahi hai, access deny aur direct redirect login page par!
+   if (!session?.user) {
+     redirect("/login");
+   }
+
+// 🛡️ SELLER ROLE CHECK: Sirf OWNER/AGENT/Admin role wale users hi access kar sakte hain
+   const userRole = session.user.role;
+   if (userRole !== "OWNER" && userRole !== "AGENT" && userRole !== "ADMIN") {
+     redirect("/login");
+   }
 
   // 🔥 100% Dynamic ID Mapping without any hardcoded fallback node
   const userId = session.user.id;
   const properties = await getUserProperties(userId);
 
   // Dynamic Valuation Formatter Utility Node
-  const totalValuation = properties.reduce((acc: number, p: any) => acc + (p.price || 0), 0);
+  const totalValuation = properties.reduce((acc: number, p: { price: number }) => acc + (p.price || 0), 0);
   const formattedValuation = totalValuation >= 10000000 
     ? `₹${(totalValuation / 10000000).toFixed(2)} Cr` 
     : `₹${(totalValuation / 100000).toFixed(2)} Lakh`;
@@ -49,7 +74,7 @@ export default async function SellerDashboardPage() {
     { value: properties.length.toString(), text: "Total Listed Assets", color: "text-blue-600", bg: "bg-blue-50" },
     { value: "12", text: "Active Buyer Leads", color: "text-emerald-600", bg: "bg-emerald-50" },
     { value: formattedValuation, text: "Listed Pipeline Valuation", color: "text-indigo-600", bg: "bg-indigo-50" },
-    { value: properties.filter((p: any) => p.status === "PENDING").length.toString(), text: "Pending Approvals", color: "text-amber-600", bg: "bg-amber-50" }
+    { value: properties.filter((p: { status: string }) => p.status === "PENDING").length.toString(), text: "Pending Approvals", color: "text-amber-600", bg: "bg-amber-50" }
   ];
 
   return (

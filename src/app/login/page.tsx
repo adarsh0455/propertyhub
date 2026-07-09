@@ -71,10 +71,9 @@ export default function LoginPage() {
 
         alert(`Login Successful! Logged in as: ${userRole || "USER"}`);
 
-        // 🛡️ Safe Role Matrix Routing System
         if (userRole === "ADMIN") {
-          router.push("/api/admin/dashboard");
-        } else if (userRole === "SELLER" || userRole === "USER") {
+          router.push("/admin/dashboard");
+        } else if (userRole === "OWNER" || userRole === "AGENT") {
           router.push("/sellerdashboard");
         } else {
           router.push("/");
@@ -161,7 +160,7 @@ export default function LoginPage() {
 
             <div className="text-center pt-2">
               <p className="text-xs font-semibold text-slate-400">
-                Don't have a marketplace account?{" "}
+                Don&#39;t have a marketplace account?{" "}
                 <Link href="/register" className="text-blue-500 hover:text-blue-600 font-bold">
                   Create Account
                 </Link>

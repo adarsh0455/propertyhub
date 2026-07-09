@@ -5,27 +5,26 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react"; // NextAuth session listeners nodes import kiye
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+const [isScrolled, setIsScrolled] = useState(false);
+   const [isOpen, setIsOpen] = useState(false);
 
   // NextAuth hooks core session monitoring destructured matrices
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    setIsMounted(true);
-
     const checkScrollPosition = () => {
-      if (window.scrollY > 50) {
+      if (typeof window !== 'undefined' && window.scrollY > 50) {
         setIsScrolled(true);
-      } else {
+      } else if (typeof window !== 'undefined') {
         setIsScrolled(false);
       }
     };
 
     checkScrollPosition();
-    window.addEventListener("scroll", checkScrollPosition);
-    return () => window.removeEventListener("scroll", checkScrollPosition);
+    if (typeof window !== 'undefined') {
+      window.addEventListener("scroll", checkScrollPosition);
+      return () => window.removeEventListener("scroll", checkScrollPosition);
+    }
   }, []);
 
   // Safe programmatic global state management system trigger logout function
@@ -57,7 +56,12 @@ export default function Navbar() {
           <Link href="/properties" className="hover:text-blue-400 transition-colors">Properties</Link>
           <Link href="/about" className="hover:text-blue-400 transition-colors">About Us</Link>
           <Link href="/contact" className="hover:text-blue-400 transition-colors">Contact</Link>
-          <Link href="/sellerdashboard" className="hover:text-blue-400 transition-colors">Dashboard</Link>
+          {session?.user?.role === "ADMIN" && (
+            <Link href="/admin/dashboard" className="hover:text-blue-400 transition-colors">Admin Panel</Link>
+          )}
+          {(session?.user?.role === "OWNER" || session?.user?.role === "AGENT") && (
+            <Link href="/sellerdashboard" className="hover:text-blue-400 transition-colors">Dashboard</Link>
+          )}
         </div>
 
         {/* Right Action Block — Desktop Only Dynamic Matrix */}
@@ -91,6 +95,15 @@ export default function Navbar() {
           >
             + Post New Properties
           </Link>
+          <Link
+            href="/liked-properties"
+            className="text-slate-300 hover:text-red-400 transition-colors"
+            aria-label="Liked Properties"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </Link>
         </div>
 
         {/* Hamburger Mobile Menu Toggle Button */}
@@ -120,17 +133,21 @@ export default function Navbar() {
 
       </div>
 
-      {/* FIXED DROPDOWN MOUNTING: Pure viewport context layer mapping */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-x-0 top-[65px] bottom-0 bg-[#090D16] border-t border-white/5 z-[9990] animate-fadeIn block overflow-y-auto">
-          <div className="px-6 pt-6 pb-12 space-y-5 flex flex-col text-left text-sm font-bold uppercase tracking-widest text-slate-200">
-            <Link href="/" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Home</Link>
-            <Link href="/properties" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Properties</Link>
-            <Link href="/about" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">About Us</Link>
-            <Link href="/contact" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Contact</Link>
-            <Link href="/sellerdashboard" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Dashboard</Link>
-            
-            {status === "loading" ? (
+{/* FIXED DROPDOWN MOUNTING: Pure viewport context layer mapping */}
+       {isOpen && (
+         <div className="md:hidden fixed inset-x-0 top-[65px] bottom-0 bg-[#090D16] border-t border-white/5 z-[9990] animate-fadeIn block overflow-y-auto">
+           <div className="px-6 pt-6 pb-12 space-y-5 flex flex-col text-left text-sm font-bold uppercase tracking-widest text-slate-200">
+             <Link href="/" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Home</Link>
+             <Link href="/properties" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Properties</Link>
+             <Link href="/about" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">About Us</Link>
+             <Link href="/contact" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Contact</Link>
+             {session?.user?.role === "ADMIN" && (
+               <Link href="/admin/dashboard" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Admin Panel</Link>
+             )}
+             {(session?.user?.role === "OWNER" || session?.user?.role === "AGENT") && (
+               <Link href="/sellerdashboard" onClick={() => setIsOpen(false)} className="hover:text-blue-400 py-2.5 transition-colors border-b border-white/5 block cursor-pointer">Dashboard</Link>
+             )}
+             {status === "loading" ? (
               <span className="text-xs font-bold text-slate-500 py-2.5 block">Syncing Session...</span>
             ) : session ? (
               // 💡 IF LOGGED IN (MOBILE DROPDOWN VIEW): Identity parameters display layout mapping
@@ -157,6 +174,14 @@ export default function Navbar() {
               <button className="w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl transition-all shadow-md shadow-blue-600/10 active:scale-95 cursor-pointer">
                 + Post New Properties
               </button>
+            </Link>
+            <Link href="/liked-properties" onClick={() => setIsOpen(false)} className="pt-3 block text-center">
+              <span className="text-slate-300 hover:text-red-400 transition-colors inline-flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-widest">Liked Properties</span>
+              </span>
             </Link>
           </div>
         </div>

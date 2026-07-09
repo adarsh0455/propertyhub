@@ -10,29 +10,20 @@ export default function PostPropertiesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
-  
   const [formData, setFormData] = useState({
     title: "",
     category: "plot",
     price: "",
     location: "",
     area: "",
-    beds: 0,        
-    baths: 0,       
-    description: "", 
+    beds: 0,
+    baths: 0,
+    description: "",
     amenities: [] as string[],
   });
+  const availableAmenities = ["Swimming Pool", "Gym", "Parking", "Garden", "Security", "Elevator", "Power Backup", "WiFi"];
 
-  const availableAmenities = [
-    "24/7 Security",
-    "Water Supply",
-    "Power Backup",
-    "Parking Space",
-    "Gated Community",
-    "Gym / Clubhouse",
-  ];
-
-  // 🛡️ Route Access Security: If user session is loading or not signed in
+// 🛡️ Route Access Security: If user session is loading or not signed in
   if (status === "loading") {
     return (
       <div className="w-full min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -41,16 +32,22 @@ export default function PostPropertiesPage() {
     );
   }
 
-  if (status === "unauthenticated" || !session?.user) {
-    return (
-      <div className="w-full min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center space-y-4">
-        <p className="text-sm font-black text-red-500">Authentication Guard: Access Denied.</p>
-        <button onClick={() => router.push("/login")} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-md">
-          Go To Login
-        </button>
-      </div>
-    );
+  // 🛡️ Role-based access - only OWNER/AGENT can post properties
+  interface SessionUser {
+    id?: string;
+    role?: string;
   }
+  const userRole = (session?.user as SessionUser)?.role;
+  if (status === "unauthenticated" || !session?.user || (userRole !== "OWNER" && userRole !== "AGENT")) {
+     return (
+       <div className="w-full min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center space-y-4">
+         <p className="text-sm font-black text-red-500">Access Denied: Only Property Owners and Agents can post listings.</p>
+         <button onClick={() => router.push("/login")} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-md">
+           Go To Login
+         </button>
+       </div>
+     );
+   }
 
   const handleCheckboxChange = (amenity: string) => {
     setFormData((prev) => ({
@@ -106,6 +103,13 @@ export default function PostPropertiesPage() {
         setLoading(false);
         return;
       }
+
+  const priceNum = formData.price === "" ? 0 : Number(formData.price);
+  if (priceNum <= 0) {
+    alert("Please enter a valid property price.");
+    setLoading(false);
+    return;
+  }
 
       // 2. Dispatch Stream to Next.js API Node with Dynamic Session User ID
       const response = await fetch("/api/properties", {

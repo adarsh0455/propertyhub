@@ -11,9 +11,9 @@ export default withAuth(
       return NextResponse.redirect(new URL("/login?error=UnauthorizedAdmin", req.url));
     }
 
-    // 🛡️ 2. Seller Dashboard Protection Control
-    if (path.startsWith("/sellerdashboard") && !token) {
-      return NextResponse.redirect(new URL("/login?error=LoginRequired", req.url));
+    // 🛡️ 2. Seller Dashboard Protection Control - Only OWNER/AGENT roles allowed
+    if (path.startsWith("/sellerdashboard") && token?.role !== "OWNER" && token?.role !== "AGENT" && token?.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/login?error=UnauthorizedSeller", req.url));
     }
   },
   {
