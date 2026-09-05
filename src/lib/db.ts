@@ -14,7 +14,7 @@ declare global {
 }
 
 let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+let clientPromise: Promise<MongoClient> | undefined;
 
 if (process.env.NODE_ENV === "development") {
   // Global context evaluation to prevent HMR connection spikes
@@ -29,13 +29,15 @@ if (process.env.NODE_ENV === "development") {
     });
   }
   client = global.mongoClientGlobal;
-  
+
   if (!global.mongoClientPromiseGlobal) {
     global.mongoClientPromiseGlobal = client.connect();
   }
   clientPromise = global.mongoClientPromiseGlobal;
 } else {
   // Deployed production environment instances
+  // ⚡ Connection is lazy — MongoDB driver auto-connects on first query.
+  // This prevents DNS/connection errors during `next build` (SSG imports modules at build time).
   client = new MongoClient(uri, {
     retryReads: true,
     retryWrites: true,
@@ -44,7 +46,6 @@ if (process.env.NODE_ENV === "development") {
     socketTimeoutMS: 60000,
     maxPoolSize: 10,
   });
-  clientPromise = client.connect();
 }
 
 // 🔥 EXPORT CLIENT: purani integration loops ko support karne ke liye reference
@@ -52,6 +53,9 @@ export { client };
 
 // 🚀 DYNAMIC DB RESOLVER ENGINE: Isko call karne se connection kabhi closed state me nahi milega
 export async function getDatabase() {
+  if (!clientPromise) {
+    clientPromise = client.connect();
+  }
   const activeClient = await clientPromise;
   return activeClient.db("propertyhub"); // Explicitly returns healthy connection channel
 }
