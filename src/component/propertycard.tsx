@@ -30,7 +30,6 @@ export default function PropertyCard({ property, defaultLiked = false, onUnlike 
 
   useEffect(() => {
     if (defaultLiked) {
-      setChecking(false);
       return;
     }
     async function checkLikeStatus() {

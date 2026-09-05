@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -8,6 +9,7 @@ const nextConfig = {
       },
     ],
   },
+  allowedDevOrigins: ['10.201.234.243', 'localhost:3000'], // ⚡ Moved from next.config.ts
 };
 
 export default nextConfig;

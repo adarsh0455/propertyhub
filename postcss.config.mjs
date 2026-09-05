@@ -1,13 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    // 💡 Nayi allocated IP ko yahan inject karo
-    allowedDevOrigins: ['10.201.234.243', 'localhost:3000']
-  },
-  
+const postcssConfig = {
   plugins: {
     "@tailwindcss/postcss": {},
   },
 };
 
-export default nextConfig;
+export default postcssConfig;
