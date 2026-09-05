@@ -1,12 +1,35 @@
 // MongoDB client for direct database access
-import { MongoClient, MongoServerSelectionError, MongoNetworkError } from "mongodb";
+import { MongoClient, MongoServerSelectionError, MongoNetworkError, MongoClientOptions } from "mongodb";
 import "dotenv/config";
 
 const uri = process.env.DATABASE_URL ?? "";
 
 if (!uri) {
-  throw new Error("DATABASE_URL environment variable is not defined");
+  // Non-fatal: allows module import during build/SSG when DATABASE_URL
+  // isn't available in the build environment. Connection is lazy — the
+  // MongoDB driver only connects when a query runs at runtime, where the
+  // try-catch blocks in pages/API routes will handle the failure gracefully.
+  console.warn("DATABASE_URL environment variable is not defined. Database features will be unavailable.");
 }
+
+// ⚡ The MongoDB driver validates the URI at construction time and throws
+// MongoParseError for invalid schemes (including empty string). We use a
+// valid placeholder URI so the MongoClient can be constructed during build.
+// At runtime (Vercel Serverless Functions), DATABASE_URL is set in the
+// project env and this module is re-evaluated per-process with the real URI.
+const isBuildPlaceholder = !uri;
+const connectUri = uri || "mongodb://localhost:27017/__build_placeholder__";
+
+// Shorter timeouts for placeholder connections (build-time only) to avoid
+// 60s stalls when DATABASE_URL is unset. Real connections use production timeouts.
+const clientOptions: MongoClientOptions = {
+  retryReads: true,
+  retryWrites: true,
+  connectTimeoutMS: isBuildPlaceholder ? 2000 : 60000,
+  serverSelectionTimeoutMS: isBuildPlaceholder ? 2000 : 60000,
+  socketTimeoutMS: isBuildPlaceholder ? 2000 : 60000,
+  maxPoolSize: 10,
+};
 // Extend global scope safely in Next.js environment context
 declare global {
   var mongoClientGlobal: MongoClient | undefined;
@@ -19,14 +42,7 @@ let clientPromise: Promise<MongoClient> | undefined;
 if (process.env.NODE_ENV === "development") {
   // Global context evaluation to prevent HMR connection spikes
   if (!global.mongoClientGlobal) {
-    global.mongoClientGlobal = new MongoClient(uri, {
-      retryReads: true,
-      retryWrites: true,
-      connectTimeoutMS: 60000,
-      serverSelectionTimeoutMS: 60000,
-      socketTimeoutMS: 60000,
-      maxPoolSize: 10,
-    });
+    global.mongoClientGlobal = new MongoClient(connectUri, clientOptions);
   }
   client = global.mongoClientGlobal;
 
@@ -38,14 +54,7 @@ if (process.env.NODE_ENV === "development") {
   // Deployed production environment instances
   // ⚡ Connection is lazy — MongoDB driver auto-connects on first query.
   // This prevents DNS/connection errors during `next build` (SSG imports modules at build time).
-  client = new MongoClient(uri, {
-    retryReads: true,
-    retryWrites: true,
-    connectTimeoutMS: 60000,
-    serverSelectionTimeoutMS: 60000,
-    socketTimeoutMS: 60000,
-    maxPoolSize: 10,
-  });
+  client = new MongoClient(connectUri, clientOptions);
 }
 
 // 🔥 EXPORT CLIENT: purani integration loops ko support karne ke liye reference
